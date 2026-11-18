@@ -82,7 +82,7 @@ No 3D model was downloaded. The body is a set of signed distance primitives (ell
 
 ## The physics
 
-| | |
+| Idea | Rule used in the simulation |
 |---|---|
 | Pressure | $P = 1 + \dfrac{d}{10}$ bar, with depth $d$ in metres |
 | Boyle's law | $P_1 V_1 = P_2 V_2$ for a closed, flexible air space |
