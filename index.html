@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="המחשה תלת-ממדית של חוקי הפיזיקה בצלילה: לחץ, ציפה וחוק בויל.">
+<title>פיזיקה של צלילה</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+
+<div id="loader" role="status">
+  <div class="spinner" aria-hidden="true"></div>
+  <p>בונים את אתר הצלילה…</p>
+</div>
+
+<aside class="hud" aria-label="מדי עומק ולחץ">
+  <div class="gauge" aria-hidden="true">
+    <div class="gauge-track">
+      <div class="gauge-fill" id="gaugeFill"></div>
+      <div class="gauge-tick" data-d="0"><span>0 מ'</span><b>1 בר</b></div>
+      <div class="gauge-tick" data-d="10"><span>10 מ'</span><b>2 בר</b></div>
+      <div class="gauge-tick" data-d="20"><span>20 מ'</span><b>3 בר</b></div>
+      <div class="gauge-tick" data-d="30"><span>30 מ'</span><b>4 בר</b></div>
+      <div class="gauge-tick" data-d="40"><span>40 מ'</span><b>5 בר</b></div>
+      <div class="gauge-marker" id="gaugeMarker"></div>
+    </div>
+  </div>
+  <div class="readouts">
+    <div class="readout"><span class="label">עומק</span><span class="value" id="depthValue">0.0</span><span class="unit">מ'</span></div>
+    <div class="readout"><span class="label">לחץ</span><span class="value" id="pressureValue">1.00</span><span class="unit">בר</span></div>
+    <p class="split" id="pressureSplit">1 בר אוויר + 0.00 בר מים</p>
+  </div>
+</aside>
+
+<div class="panel-stack">
+<aside class="panel forces" id="forcesPanel" aria-label="כוחות ותנועה" hidden>
+  <h3>ציפה ותנועה</h3>
+  <div class="big-row">
+    <div><span class="label">מהירות אנכית</span><span class="value" id="speedValue">0</span><span class="unit">מ'/דקה</span></div>
+    <div><span class="label">ציפה נטו</span><span class="value" id="netValue">0</span><span class="unit">ק"ג</span></div>
+  </div>
+  <p class="state" id="netState">צף</p>
+  <ul class="bars">
+    <li><span>אוויר בחליפה</span><i><em id="suitBar"></em></i><b id="suitValue">6.0 ל'</b></li>
+    <li><span>אוויר במאזן</span><i><em id="bcdBar"></em></i><b id="bcdValue">5.0 ל'</b></li>
+    <li><span>ריאות</span><i><em id="lungBar"></em></i><b id="lungValue">נשימה רגילה</b></li>
+  </ul>
+  <svg class="spark" id="speedChart" viewBox="0 0 240 70" role="img" aria-label="מהירות הירידה לפי עומק">
+    <line x1="30" y1="60" x2="232" y2="60" class="axis"/>
+    <line x1="30" y1="6" x2="30" y2="60" class="axis"/>
+    <text x="26" y="66" class="tick">0</text>
+    <text x="232" y="68" class="tick end">10 מ'</text>
+    <text x="4" y="14" class="tick">20</text>
+    <polyline id="speedLine" class="line" points=""/>
+    <circle id="speedDot" r="4" class="dot" cx="30" cy="60"/>
+  </svg>
+  <p class="caption">מהירות הירידה (מ'/דקה) לפי עומק, 0–10 מ'</p>
+</aside>
+
+<aside class="panel balloon-panel" id="balloonPanel" aria-label="הבלון" hidden>
+  <h3>בלון סגור</h3>
+  <p>נופח על פני המים ל-<b>17</b> ליטר.</p>
+  <div class="big-row">
+    <div><span class="label">נפח עכשיו</span><span class="value" id="balloonLitres">17.0</span><span class="unit">ל'</span></div>
+    <div><span class="label">חלק מהנפח</span><span class="value" id="balloonFraction">1/1</span></div>
+  </div>
+  <p class="formula" dir="ltr">P₁ × V₁ = P₂ × V₂ → <span id="balloonFormula">1 × 17 = 1.0 × 17.0</span></p>
+</aside>
+
+<aside class="panel ear-panel" id="earPanel" aria-label="השוואת לחצים באוזן" hidden>
+  <h3>השוואת לחצים באוזן</h3>
+  <svg viewBox="0 0 300 170" id="earSvg" role="img" aria-label="תרשים של תעלת האוזן, עור התוף והאוזן התיכונה">
+    <rect x="0" y="62" width="112" height="40" class="water"/>
+    <text x="56" y="56" class="lbl">תעלת האוזן (מים)</text>
+    <ellipse cx="168" cy="82" rx="52" ry="40" class="air" id="earAir"/>
+    <text x="172" y="30" class="lbl">אוזן תיכונה (אוויר)</text>
+    <path id="eardrum" class="drum" d="M112,56 Q112,82 112,108"/>
+    <text x="112" y="132" class="lbl">עור התוף</text>
+    <path class="tube" d="M196,112 C214,134 236,148 270,160"/>
+    <text x="246" y="140" class="lbl">חצוצרה</text>
+    <g id="earDots"><circle r="3.2" class="puff"/><circle r="3.2" class="puff"/><circle r="3.2" class="puff"/></g>
+    <g id="earArrows" class="push">
+      <path d="M60,82 l24,0 m-7,-6 l7,6 l-7,6"/>
+    </g>
+  </svg>
+  <p class="state" id="earState">הלחץ בחוץ שווה ללחץ בפנים.</p>
+</aside>
+
+<aside class="panel warn-panel" id="warnPanel" aria-label="אזהרה: עצירת נשימה בעלייה" hidden>
+  <h3>אם עוצרים נשימה בעלייה</h3>
+  <p>אוויר שנכלא בריאות ב-30 מטר היה מתפשט פי <b id="lungFactor">1.0</b> עד העומק הנוכחי.</p>
+  <p class="danger" id="lungDanger">ריאות מלאות עם נשימה עצורה עלולות להיפגע. נושמים כל הזמן.</p>
+  <p>בלי לשחרר אוויר מהמאזן, הציפה הייתה <b id="runaway" dir="ltr">0</b> ק"ג, ועלייה כזאת יוצאת משליטה.</p>
+</aside>
+
+</div>
+
+<div id="labels" aria-hidden="true"></div>
+
+<main id="story">
+  <section class="chapter intro" data-ch="intro">
+    <div class="card hero">
+      <p class="eyebrow">המחשה אינטראקטיבית</p>
+      <h1>פיזיקה של צלילה</h1>
+      <p>גללו למטה וצללו עם הצוללן. בכל 10 מטר נוסף בר אחד של לחץ, והאוויר בגוף ובציוד משנה את נפחו בדרך.</p>
+      <p class="hint">גללו כדי לרדת ↓</p>
+    </div>
+  </section>
+
+  <section class="chapter" data-ch="surface">
+    <div class="card">
+      <p class="eyebrow">פרק 1</p>
+      <h2>על פני המים: 1 בר</h2>
+      <p>על פני הים הגוף נתון ללחץ של אטמוספירה אחת, בערך 1 בר. זה משקל עמודת האוויר שמעלינו.</p>
+      <p>הצוללן שוכב על הבטן במצב אופקי. יש מעט אוויר במאזן הציפה, ולכן הוא צף.</p>
+    </div>
+  </section>
+
+  <section class="chapter" data-ch="start">
+    <div class="card">
+      <p class="eyebrow">פרק 2</p>
+      <h2>מתחילים לשקוע במצב אופקי</h2>
+      <p>כדי לשקוע, המשקל צריך לגבור על כוח הציפה. האוויר במאזן, בריאות ובבועות של חליפת הניאופרן מרים את הצוללן, ולכן קשה להתחיל: מרוקנים את המאזן ונושפים עמוק.</p>
+      <p>במצב אופקי האוויר במאזן מתקבץ בגב, ולכן מרוקנים אותו דרך שסתום שנמצא בנקודה הגבוהה. הגוף הפרוש מתנגד לתנועה במים, ולכן ההתחלה איטית במיוחד.</p>
+    </div>
+  </section>
+
+  <section class="chapter" data-ch="accelerate">
+    <div class="card">
+      <p class="eyebrow">פרק 3</p>
+      <h2>השקיעה מואצת</h2>
+      <p>ככל שיורדים, הלחץ עולה והאוויר בחליפה נדחס. נפח קטן יותר דוחה פחות מים, ולכן כוח הציפה יורד והצוללן שוקע מהר יותר ויותר.</p>
+      <p>שימו לב למד המהירות: בין פני המים ל-10 מטר המהירות כמעט מוכפלת. לכן מוסיפים למאזן מעט אוויר בכל פעם ושומרים על ירידה איטית ומבוקרת. בדרך משווים לחצים באוזניים, מוקדם ולעתים קרובות.</p>
+    </div>
+  </section>
+
+  <section class="chapter" data-ch="pressure">
+    <div class="card">
+      <p class="eyebrow">פרק 4</p>
+      <h2>כל 10 מטר: עוד 1 בר</h2>
+      <p>עמודת מי ים בגובה 10 מטר שוקלת בערך כמו כל האטמוספירה שמעלינו. לכן בכל 10 מטר נוסף בר אחד: ב-10 מטר 2 בר, ב-20 מטר 3 בר וב-30 מטר 4 בר.</p>
+      <p>הלחץ פועל על הגוף מכל הכיוונים באותה מידה (עקרון פסקל). הגוף בנוי בעיקר מנוזלים שכמעט לא נדחסים, ולכן רק חללי האוויר מרגישים את השינוי.</p>
+    </div>
+  </section>
+
+  <section class="chapter" data-ch="boyle">
+    <div class="card">
+      <p class="eyebrow">פרק 5</p>
+      <h2>חוק בויל: האוויר נדחס</h2>
+      <p>בטמפרטורה קבועה, הלחץ והנפח של גז הפוכים זה לזה: <span class="eq" dir="ltr">P₁ × V₁ = P₂ × V₂</span>. כשהלחץ מוכפל, הנפח קטן לחצי.</p>
+      <p>הבלון שקשור לצוללן נופח על פני המים. ב-10 מטר נפחו חצי, ב-20 מטר שליש וב-30 מטר רבע. כך קורה גם לאוויר במאזן ובחליפה, ולכן הצוללן מוסיף אוויר למאזן בירידה.</p>
+    </div>
+  </section>
+
+  <section class="chapter" data-ch="body">
+    <div class="card">
+      <p class="eyebrow">פרק 6</p>
+      <h2>חללי האוויר בגוף</h2>
+      <p>האוזן התיכונה, הסינוסים והמסכה הם חללי אוויר. בירידה הלחץ מבחוץ דוחף את עור התוף פנימה, ולכן משווים לחצים: אוויר מהגרון עובר דרך החצוצרה לאוזן התיכונה. את המסכה משווים בנשיפה קלה מהאף.</p>
+      <p>הריאות לא מתכווצות, כי הווסת מספק אוויר בלחץ הסביבה. אבל כל נשימה מכילה יותר אוויר: ב-30 מטר פי 4 מאשר על פני המים, ולכן צריכת האוויר גדלה עם העומק.</p>
+    </div>
+  </section>
+
+  <section class="chapter" data-ch="ascent">
+    <div class="card">
+      <p class="eyebrow">פרק 7</p>
+      <h2>בעלייה האוויר מתפשט</h2>
+      <p>בדרך למעלה הלחץ יורד והאוויר מתפשט. השינוי היחסי הגדול ביותר הוא קרוב לפני המים: בין 10 מטר לפני המים הנפח מוכפל.</p>
+      <p>לכן נושמים כל הזמן ולעולם לא עוצרים נשימה. במקביל משחררים אוויר מהמאזן ועולים לאט, כ-9 מטר לדקה או לפי מחשב הצלילה.</p>
+    </div>
+  </section>
+
+  <section class="chapter" data-ch="end">
+    <div class="card">
+      <p class="eyebrow">פרק 8</p>
+      <h2>עצירת ביטחון ופני המים</h2>
+      <p>ב-5 מטר עוצרים לכ-3 דקות לפני העלייה האחרונה (כאן העצירה מקוצרת). על פני המים מנפחים את המאזן וצפים בנוחות.</p>
+      <p>בשלבים הבאים: האוויר בצינורות וצריכת האוויר, החנקן בדם, וראייה וצבעים מתחת למים.</p>
+    </div>
+  </section>
+
+  <footer class="disclaimer">
+    <p>לימוד והמחשה בלבד. המספרים מקורבים, והאתר לא מחליף קורס צלילה מוסמך או תכנון צלילה.</p>
+    <p><a href="https://github.com/matnael332/dive-physics">קוד המקור ב-GitHub</a></p>
+    <p class="nogl">הדפדפן הזה לא מציג תלת-ממד (WebGL), אבל אפשר לקרוא את כל ההסברים.</p>
+  </footer>
+</main>
+
+<script src="dist/app.js"></script>
+</body>
+</html>
