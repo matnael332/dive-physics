@@ -20,6 +20,18 @@ export function volumeAtDepth(surfaceVolume, depth) {
   return boyleVolume(surfaceVolume, 1, pressureAt(depth));
 }
 
+// Pressure difference across the eardrum (bar) after descending `metres` without equalizing:
+// the water side rises 1 bar per 10 m while the air in the middle ear stays where it was.
+export function unequalizedDelta(metres) {
+  return Math.max(0, metres) / METRES_PER_BAR;
+}
+
+// Linear size of a closed balloon at absolute pressure p, relative to its size at 1 bar.
+// Volume scales as 1/p (Boyle), so a length scales as the cube root of that.
+export function balloonScale(p) {
+  return Math.cbrt(1 / p);
+}
+
 // The diver used in the story (illustrative values, not a buoyancy calculator).
 export const DIVER = {
   surfaceNetKg: 0, // net buoyancy at the surface with an empty BCD and a normal breath: about neutral

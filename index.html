@@ -6,6 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="description" content="המחשה תלת-ממדית של חוקי הפיזיקה בצלילה: לחץ, ציפה וחוק בויל.">
 <title>פיזיקה של צלילה</title>
+<link rel="stylesheet" href="css/figures.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -61,9 +62,10 @@
   <p class="caption">מהירות הירידה (מ'/דקה) לפי עומק, 0–10 מ'</p>
 </aside>
 
-<aside class="panel balloon-panel" id="balloonPanel" aria-label="הבלון" hidden>
+<aside class="panel balloon-panel has-fig" id="balloonPanel" aria-label="הבלון" hidden>
   <h3>בלון סגור</h3>
-  <p>נופח על פני המים ל-<b>17</b> ליטר.</p>
+  <p>נופח על פני המים ל-<b>17</b> ליטר. כאן הוא קשור בתוך סיר מלא מים, והלחץ בסיר שווה ללחץ בעומק של הצוללן.</p>
+  <div class="fig iso" id="boyleFig" role="img" aria-label="סיר לחץ חתוך לשניים ומלא מים, ובתוכו בלון קשור לרצפה. משאבה מעלה את הלחץ בירידה ושסתום משחרר אותו בעלייה, שעון על המכסה מראה את העומק, ומד גובה שנשען על הבלון מראה כמה הוא התכווץ."></div>
   <div class="big-row">
     <div><span class="label">נפח עכשיו</span><span class="value" id="balloonLitres">17.0</span><span class="unit">ל'</span></div>
     <div><span class="label">חלק מהנפח</span><span class="value" id="balloonFraction">1/1</span></div>
@@ -71,23 +73,17 @@
   <p class="formula" dir="ltr">P₁ × V₁ = P₂ × V₂ → <span id="balloonFormula">1 × 17 = 1.0 × 17.0</span></p>
 </aside>
 
-<aside class="panel ear-panel" id="earPanel" aria-label="השוואת לחצים באוזן" hidden>
+<aside class="panel ear-panel has-fig" id="earPanel" aria-label="השוואת לחצים באוזן" hidden>
   <h3>השוואת לחצים באוזן</h3>
-  <svg viewBox="0 0 300 170" id="earSvg" role="img" aria-label="תרשים של תעלת האוזן, עור התוף והאוזן התיכונה">
-    <rect x="0" y="62" width="112" height="40" class="water"/>
-    <text x="56" y="56" class="lbl">תעלת האוזן (מים)</text>
-    <ellipse cx="168" cy="82" rx="52" ry="40" class="air" id="earAir"/>
-    <text x="172" y="30" class="lbl">אוזן תיכונה (אוויר)</text>
-    <path id="eardrum" class="drum" d="M112,56 Q112,82 112,108"/>
-    <text x="112" y="132" class="lbl">עור התוף</text>
-    <path class="tube" d="M196,112 C214,134 236,148 270,160"/>
-    <text x="246" y="140" class="lbl">חצוצרה</text>
-    <g id="earDots"><circle r="3.2" class="puff"/><circle r="3.2" class="puff"/><circle r="3.2" class="puff"/></g>
-    <g id="earArrows" class="push">
-      <path d="M60,82 l24,0 m-7,-6 l7,6 l-7,6"/>
-    </g>
-  </svg>
-  <p class="state" id="earState">הלחץ בחוץ שווה ללחץ בפנים.</p>
+  <div class="fig iso" id="earFig" role="button" tabindex="0" aria-label="דגם של אוזן חתוכה לשניים. מים ממלאים את תעלת האוזן עד עור התוף, מאחוריו האוזן התיכונה עם אוויר ועצמות השמע, והחצוצרה יורדת ממנה לגרון. שעון למעלה מראה את הפרש הלחצים על עור התוף. לחיצה ממושכת משווה לחצים."></div>
+  <ul class="keys" aria-hidden="true">
+    <li><i class="k-water"></i>מים בתעלת האוזן</li>
+    <li><i class="k-air"></i>אוויר באוזן התיכונה</li>
+    <li><i class="k-drum"></i>עור התוף</li>
+  </ul>
+  <p class="state" id="earState">הלחץ משני צדי עור התוף שווה.</p>
+  <p class="fig-read">הפרש לחץ: <b dir="ltr" id="earDelta">0.00</b> בר, כמו <b dir="ltr" id="earMetres">0.0</b> מ' בלי השוואה</p>
+  <p class="caption">לחיצה ממושכת על הדגם משווה לחצים (התנועה מוגדלת).</p>
 </aside>
 
 <aside class="panel warn-panel" id="warnPanel" aria-label="אזהרה: עצירת נשימה בעלייה" hidden>
@@ -185,8 +181,8 @@
 
   <footer class="disclaimer">
     <p>לימוד והמחשה בלבד. המספרים מקורבים, והאתר לא מחליף קורס צלילה מוסמך או תכנון צלילה.</p>
-    <p><a href="https://github.com/matnael332/dive-physics">קוד המקור ב-GitHub</a></p>
     <p class="nogl">הדפדפן הזה לא מציג תלת-ממד (WebGL), אבל אפשר לקרוא את כל ההסברים.</p>
+    <p><a href="https://github.com/matnael332/dive-physics">קוד המקור ב-GitHub</a></p>
   </footer>
 </main>
 

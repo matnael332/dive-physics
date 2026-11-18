@@ -1,8 +1,11 @@
 // Everything on the page outside the 3D canvas: gauges, panels, labels and the scroll position.
 import * as THREE from 'three';
 import { pressureAt } from './physics.js';
+import { createEarFigure } from './figures/ear.js';
+import { createBoyleFigure } from './figures/boyle.js';
 
 const $ = (id) => document.getElementById(id);
+const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 const fmt = (x, d = 1) => (Math.abs(x) < 0.05 && d === 1 ? 0 : x).toFixed(d);
 
 // Where each label sits relative to its point, so neighbouring labels do not overlap.
@@ -32,10 +35,12 @@ export function buildUI(chapters, profile) {
     suitBar: $('suitBar'), suitValue: $('suitValue'), bcdBar: $('bcdBar'), bcdValue: $('bcdValue'),
     lungBar: $('lungBar'), lungValue: $('lungValue'), speedLine: $('speedLine'), speedDot: $('speedDot'),
     balloonPanel: $('balloonPanel'), balloonLitres: $('balloonLitres'), balloonFraction: $('balloonFraction'), balloonFormula: $('balloonFormula'),
-    ear: $('earPanel'), eardrum: $('eardrum'), earAir: $('earAir'), earState: $('earState'), earDots: $('earDots'), earArrows: $('earArrows'),
+    ear: $('earPanel'), earState: $('earState'), earDelta: $('earDelta'), earMetres: $('earMetres'),
     warn: $('warnPanel'), lungFactor: $('lungFactor'), lungDanger: $('lungDanger'), runaway: $('runaway'),
     labels: $('labels'),
   };
+  const earFig = createEarFigure($('earFig'));
+  const boyleFig = createBoyleFigure($('boyleFig'));
   const GAUGE_MAX = 40;
   document.querySelectorAll('.gauge-tick').forEach((t) => {
     t.style.top = (Number(t.dataset.d) / GAUGE_MAX) * 100 + '%';
@@ -103,11 +108,14 @@ export function buildUI(chapters, profile) {
     return { chapter: ch, index: idx, progress: p, time: ch.t[0] + (ch.t[1] - ch.t[0]) * p };
   }
 
+  function setText(el, text) {
+    if (el.textContent !== text) el.textContent = text;
+  }
+
   function setHidden(el, hidden) {
     if (el.hidden !== hidden) el.hidden = hidden;
   }
 
-  let earT = 0;
   function update({ sample, chapter, dt, camera, anchors, show }) {
     const d = sample.depth;
     const P = pressureAt(d);
@@ -146,34 +154,20 @@ export function buildUI(chapters, profile) {
       els.balloonLitres.textContent = vol.toFixed(1);
       els.balloonFraction.textContent = '1/' + P.toFixed(1);
       els.balloonFormula.textContent = `1 × 17 = ${P.toFixed(1)} × ${vol.toFixed(1)}`;
+      boyleFig.update(dt, d, reduceMotion);
     }
 
-    // Ear: pressure builds on the eardrum during a short descent, then the diver equalizes.
+    // Ear model: a short descent without equalizing pushes the eardrum in; equalizing lets air up the tube.
     setHidden(els.ear, !show.ear);
     if (show.ear) {
-      earT = (earT + dt) % 4.2;
-      let bulge, puff = -1;
-      if (earT < 2.6) bulge = (earT / 2.6) * 16;
-      else if (earT < 3.4) { const k = (earT - 2.6) / 0.8; bulge = 16 * (1 - k); puff = k; } else bulge = 0;
-      els.eardrum.setAttribute('d', `M112,56 Q${(112 + bulge * 2).toFixed(1)},82 112,108`);
-      els.earAir.setAttribute('rx', (52 - bulge * 0.6).toFixed(1));
-      els.earArrows.setAttribute('opacity', (bulge / 16).toFixed(2));
-      const dots = els.earDots.children;
-      for (let i = 0; i < dots.length; i++) {
-        const k = puff < 0 ? -1 : puff - i * 0.18;
-        const on = k >= 0 && k <= 1;
-        dots[i].setAttribute('opacity', on ? '1' : '0');
-        if (on) {
-          const t = 1 - k;
-          const x = (1 - t) ** 3 * 196 + 3 * (1 - t) ** 2 * t * 214 + 3 * (1 - t) * t * t * 236 + t ** 3 * 270;
-          const y = (1 - t) ** 3 * 112 + 3 * (1 - t) ** 2 * t * 134 + 3 * (1 - t) * t * t * 148 + t ** 3 * 160;
-          dots[i].setAttribute('cx', x.toFixed(1));
-          dots[i].setAttribute('cy', y.toFixed(1));
-        }
-      }
-      els.earState.textContent = puff >= 0
-        ? 'משווים לחצים: אוויר עובר דרך החצוצרה ועור התוף חוזר למקומו.'
-        : bulge > 2 ? 'הלחץ בחוץ גבוה מבפנים: עור התוף נדחף פנימה.' : 'הלחץ בחוץ שווה ללחץ בפנים.';
+      const e = earFig.update(dt, reduceMotion);
+      setText(els.earState, e.equalizing
+        ? 'משווים לחצים: אוויר עולה מהגרון דרך החצוצרה, ועור התוף חוזר למקומו.'
+        : e.dp >= 0.15 ? 'עור התוף מתוח ומכאיב. משווים לחצים עכשיו.'
+          : e.dp > 0.02 ? 'הלחץ בתעלה גבוה מהלחץ באוזן התיכונה: עור התוף נדחף פנימה.'
+            : 'הלחץ משני צדי עור התוף שווה.');
+      setText(els.earDelta, e.dp.toFixed(2));
+      setText(els.earMetres, e.metres.toFixed(1));
     }
 
     // Breath-hold warning during the ascent.

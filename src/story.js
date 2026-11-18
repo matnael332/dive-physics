@@ -36,7 +36,7 @@ export function buildChapters(marks) {
     },
     {
       id: 'body', t: [marks.d30, marks.ascent],
-      cam: { az: 194, el: -12, dist: 1.9, target: [0.4, 0.03, 0] },
+      cam: { az: 194, el: -12, dist: 1.9, target: [0.72, 0.03, 0] },
       show: { xray: 1, ear: true, balloon: true, labels: ['lungs', 'sinus', 'ear', 'mask', 'bcd'] },
     },
     {

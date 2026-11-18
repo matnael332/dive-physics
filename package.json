@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "description": "Interactive 3D explainer of the physics of scuba diving",
   "scripts": {
+    "figures": "node tools/figures/build.mjs",
+    "figures:audit": "node tools/figures/build.mjs --audit",
     "build": "esbuild src/main.js --bundle --minify --format=iife --target=es2020 --legal-comments=linked --outfile=dist/app.js",
     "watch": "esbuild src/main.js --bundle --format=iife --target=es2020 --outfile=dist/app.js --watch",
     "test": "node --test \"tests/*.test.js\""
